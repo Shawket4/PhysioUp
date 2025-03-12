@@ -19,9 +19,9 @@ func main() {
 	},
 	))
 	Routes.ConfigRoutes(router)
-	go func() {
-		// Whatsapp.Listen()
-	}()
+	// go func() {
+
+	// }()
 	// router.RunTLS(":5505", "dentex.crt", "dentex_priv.key")
 	router.Run(":3005")
 }

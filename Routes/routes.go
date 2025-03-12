@@ -3,6 +3,7 @@ package Routes
 import (
 	"PhysioUp/Controllers"
 	"PhysioUp/SSE"
+	"PhysioUp/Whatsapp"
 
 	"PhysioUp/Middleware"
 
@@ -25,6 +26,8 @@ func ConfigRoutes(router *gin.Engine) {
 	public.POST("/FetchAppointmentsByPatientID", Controllers.FetchAppointmentsByPatientID)
 	public.POST("/FetchFutureAppointments", Controllers.FetchFutureAppointments)
 	public.POST("/VerifyAppointmentRequestPhoneNo", Controllers.VerifyAppointmentRequestPhoneNo)
+	authorized.GET("/CheckWhatsAppLogin", Whatsapp.CheckLogin)
+	authorized.GET("/GetWhatsAppQRCode", Whatsapp.GetQRCode)
 	authorized.GET("/FetchRequestedAppointments", Controllers.FetchRequestedAppointments)
 	authorized.POST("/FetchPatientCurrentPackage", Controllers.FetchPatientCurrentPackage)
 	authorized.POST("/FetchPatientPackages", Controllers.FetchPatientPackages)

@@ -3,6 +3,8 @@ package Controllers
 import (
 	"PhysioUp/Models"
 	"PhysioUp/SSE"
+	"PhysioUp/Whatsapp"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -143,6 +145,7 @@ func RegisterAppointment(c *gin.Context) {
 	// 		fmt.Println(resp.Body)
 	// 	}
 	// }
+	Whatsapp.SendMessage(appointmentRequest.PhoneNumber, fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed", appointmentRequest.DateTime, appointmentRequest.TherapistName))
 	SSE.Broadcaster.Broadcast("refresh")
 	c.JSON(http.StatusOK, gin.H{"message": "Appointment registered successfully"})
 }
@@ -381,8 +384,6 @@ func RemoveAppointment(c *gin.Context) {
 	var TreatmentPlan Models.TreatmentPlan
 
 	if err := tx.Model(&Models.TreatmentPlan{}).Where("id = ?", treatmentPlanID).First(&TreatmentPlan).Error; err == nil {
-
-		TreatmentPlan.Remaining += 1
 
 		if err := tx.Save(&TreatmentPlan).Error; err != nil {
 			log.Println(err)
