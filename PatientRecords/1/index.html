@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car Trip History</title>
+  <!-- Bootstrap CSS for styling -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="mb-4">Car Trip History</h1>
+    <form id="tripForm">
+      <!-- Dropdown for Car Selection -->
+      <div class="mb-3">
+        <label for="carSelect" class="form-label">Select Car</label>
+        <select class="form-select" id="carSelect" required>
+          <option value="" disabled selected>Select a car</option>
+          <option value="19419bf3-6aa0-e811-80de-0025b500010d">9156</option>
+          <option value="7d1f3531-8e91-ed11-8103-0025b500010d">7421</option>
+          <option value="af56caf9-cf14-ea11-80ee-0025b500010d">5783</option>
+          <option value="5b22173f-6ba0-e811-80de-0025b500010d">4593</option>
+          <option value="927b57f5-6edd-eb11-80f8-0025b500010d">4253</option>
+          <option value="76eca2d6-36f4-eb11-80f8-0025b500010d">5138</option>
+          <option value="46ab06c4-5fb4-e911-80ed-0025b500010d">8427</option>
+          <option value="edddb58e-aaba-ea11-80f4-0025b500010d">6834</option>
+          <option value="19cdd2ad-aaba-ea11-80f4-0025b500010d">8461</option>
+          <option value="ca53d5de-cf14-ea11-80ee-0025b500010d">6359</option>
+          <option value="2782a30d-0143-ed11-8100-0025b500010d">5139</option>
+          <option value="cd482774-6ba0-e811-80de-0025b500010d">4381</option>
+          <option value="98a0fe16-6ba0-e811-80de-0025b500010d">6584</option>
+          <option value="8a77baf4-5fb4-e911-80ed-0025b500010d">9247</option>
+          <option value="d23c85a1-6aa0-e811-80de-0025b500010d">6738</option>
+        </select>
+      </div>
+
+      <!-- Date and Time Picker for "From" -->
+      <div class="mb-3">
+        <label for="fromDateTime" class="form-label">From</label>
+        <input type="datetime-local" class="form-control" id="fromDateTime" required>
+      </div>
+
+      <!-- Date and Time Picker for "To" -->
+      <div class="mb-3">
+        <label for="toDateTime" class="form-label">To</label>
+        <input type="datetime-local" class="form-control" id="toDateTime" required>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn btn-primary">Get Trip History</button>
+    </form>
+  </div>
+
+  <!-- JavaScript to Handle Form Submission -->
+  <script>
+    document.getElementById('tripForm').addEventListener('submit', function (event) {
+      event.preventDefault(); // Prevent form submission
+
+      // Get selected values
+      const carId = document.getElementById('carSelect').value;
+      const fromDateTime = document.getElementById('fromDateTime').value;
+      const toDateTime = document.getElementById('toDateTime').value;
+
+      // Format the date and time to match the required format (M/D/YYYY H:mm:ss)
+      const formatDateTime = (dateTime) => {
+        const date = new Date(dateTime);
+        const month = date.getMonth() + 1; // Months are zero-based
+        const day = date.getDate();
+        const year = date.getFullYear();
+        const hours = date.getHours().toString().padStart(2, '0'); // Ensure two digits
+        const minutes = date.getMinutes().toString().padStart(2, '0'); // Ensure two digits
+        const seconds = date.getSeconds().toString().padStart(2, '0'); // Ensure two digits
+        return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}`;
+      };
+
+      const fromFormatted = formatDateTime(fromDateTime);
+      const toFormatted = formatDateTime(toDateTime);
+
+      // Generate the redirect URL
+      const redirectUrl = `https://fms-gps.etit-eg.com/WebPages/GetHistoryTripSummary.ashx?id=${carId}&time=6&from=${encodeURIComponent(fromFormatted)}&to=${encodeURIComponent(toFormatted)}&t=${Date.now()}`;
+
+      // Redirect to the generated URL
+      window.location.href = redirectUrl;
+    });
+  </script>
+
+  <!-- Bootstrap JS (optional, for advanced features) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
