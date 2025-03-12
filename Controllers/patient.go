@@ -196,7 +196,7 @@ func UpdatePatient(c *gin.Context) {
 	}
 
 	if !strings.HasPrefix(input.Phone, "+") {
-		input.Phone = "+20" + input.Phone
+		input.Phone = "+2" + input.Phone
 	}
 
 	patient.Name = input.Name
@@ -224,7 +224,7 @@ func CreatePatient(c *gin.Context) {
 		return
 	}
 	if !strings.HasPrefix(input.Phone, "+") {
-		input.Phone = "+20" + input.Phone
+		input.Phone = "+2" + input.Phone
 	}
 	input.IsVerified = true
 

@@ -7,17 +7,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 )
 
-func RegisterAppointment(c *gin.Context) {
+func AcceptAppointment(c *gin.Context) {
 	var input struct {
-		AppointmentRequestID uint                 `json:"appointment_request_id"`
-		Extra                Models.Appointment   `json:"extra"`
-		TreatmentPlan        Models.TreatmentPlan `json:"treatment_plan"`
+		AppointmentRequestID uint               `json:"appointment_request_id"`
+		Extra                Models.Appointment `json:"extra"`
+		// TreatmentPlan        Models.TreatmentPlan `json:"treatment_plan"`
 	}
 
 	if err := c.ShouldBindBodyWith(&input, binding.JSON); err != nil {
@@ -26,7 +25,7 @@ func RegisterAppointment(c *gin.Context) {
 		return
 	}
 
-	input.TreatmentPlan.Date = time.Now().Format("2006-01-02")
+	// input.TreatmentPlan.Date = time.Now().Format("2006-01-02")
 	// Start a transaction
 	tx := Models.DB.Begin()
 	defer func() {
@@ -50,29 +49,29 @@ func RegisterAppointment(c *gin.Context) {
 	appointment.TherapistID = appointmentRequest.TherapistID
 	appointment.TherapistName = appointmentRequest.TherapistName
 	appointment.PatientID = appointmentRequest.PatientID
-
+	appointment.TreatmentPlanID = nil
 	// Handle treatment plan
-	if input.TreatmentPlan.ID == 0 {
-		// Create a new treatment plan
-		var superTreatmentPlan Models.SuperTreatmentPlan
-		if err := tx.Model(&Models.SuperTreatmentPlan{}).Where("id = ?", input.TreatmentPlan.SuperTreatmentPlanID).First(&superTreatmentPlan).Error; err != nil {
-			log.Println(err.Error())
-			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Super treatment plan not found"})
-			return
-		}
+	// if input.TreatmentPlan.ID == 0 {
+	// 	// Create a new treatment plan
+	// 	var superTreatmentPlan Models.SuperTreatmentPlan
+	// 	if err := tx.Model(&Models.SuperTreatmentPlan{}).Where("id = ?", input.TreatmentPlan.SuperTreatmentPlanID).First(&superTreatmentPlan).Error; err != nil {
+	// 		log.Println(err.Error())
+	// 		tx.Rollback()
+	// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Super treatment plan not found"})
+	// 		return
+	// 	}
 
-		input.TreatmentPlan.PatientID = appointmentRequest.PatientID
-		input.TreatmentPlan.TotalPrice = superTreatmentPlan.Price * ((100 - input.TreatmentPlan.Discount) / 100)
-		input.TreatmentPlan.Remaining = superTreatmentPlan.SessionsCount
-		if err := tx.Create(&input.TreatmentPlan).Error; err != nil {
-			log.Println(err.Error())
-			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create treatment plan"})
-			return
-		}
-	}
-	appointment.TreatmentPlanID = input.TreatmentPlan.ID
+	// 	input.TreatmentPlan.PatientID = appointmentRequest.PatientID
+	// 	input.TreatmentPlan.TotalPrice = superTreatmentPlan.Price * ((100 - input.TreatmentPlan.Discount) / 100)
+	// 	input.TreatmentPlan.Remaining = superTreatmentPlan.SessionsCount
+	// 	if err := tx.Create(&input.TreatmentPlan).Error; err != nil {
+	// 		log.Println(err.Error())
+	// 		tx.Rollback()
+	// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create treatment plan"})
+	// 		return
+	// 	}
+	// }
+	// appointment.TreatmentPlanID = input.TreatmentPlan.ID
 
 	// Check therapist's schedule for conflicts
 	var therapist Models.Therapist
@@ -145,9 +144,80 @@ func RegisterAppointment(c *gin.Context) {
 	// 		fmt.Println(resp.Body)
 	// 	}
 	// }
-	Whatsapp.SendMessage(appointmentRequest.PhoneNumber, fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed", appointmentRequest.DateTime, appointmentRequest.TherapistName))
-	SSE.Broadcaster.Broadcast("refresh")
 	c.JSON(http.StatusOK, gin.H{"message": "Appointment registered successfully"})
+	SSE.Broadcaster.Broadcast("refresh")
+	Whatsapp.SendMessage(appointmentRequest.PhoneNumber, fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed", appointmentRequest.DateTime, appointmentRequest.TherapistName))
+}
+
+func RegisterAppointment(c *gin.Context) {
+	var input struct {
+		AppointmentID uint                 `json:"appointment_id"`
+		TreatmentPlan Models.TreatmentPlan `json:"treatment_plan"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		log.Println(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	tx := Models.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("paniced")
+			tx.Rollback() // Rollback the transaction in case of panic
+		}
+	}()
+
+	var appointment Models.Appointment
+
+	if err := tx.Model(&Models.Appointment{}).Where("id = ?", input.AppointmentID).First(&appointment).Error; err != nil {
+		log.Println(err.Error())
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Super treatment plan not found"})
+		return
+	}
+
+	if input.TreatmentPlan.ID == 0 {
+		// Create a new treatment plan
+		if err := tx.Model(&Models.SuperTreatmentPlan{}).Where("id = ?", input.TreatmentPlan.SuperTreatmentPlanID).First(&input.TreatmentPlan.SuperTreatmentPlan).Error; err != nil {
+			log.Println(err.Error())
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Super treatment plan not found"})
+			return
+		}
+
+		input.TreatmentPlan.PatientID = appointment.PatientID
+		input.TreatmentPlan.TotalPrice = input.TreatmentPlan.SuperTreatmentPlan.Price * ((100 - input.TreatmentPlan.Discount) / 100)
+		input.TreatmentPlan.Remaining = input.TreatmentPlan.SuperTreatmentPlan.SessionsCount
+
+		if err := tx.Create(&input.TreatmentPlan).Error; err != nil {
+			log.Println(err.Error())
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create treatment plan"})
+			return
+		}
+		// fmt.Println(input.TreatmentPlan)
+	}
+	fmt.Println(input.TreatmentPlan.ID)
+	fmt.Println(input.AppointmentID)
+	if err := tx.Model(&Models.Appointment{}).Where("id = ?", input.AppointmentID).Update("treatment_plan_id", input.TreatmentPlan.ID).Error; err != nil {
+		log.Println(err.Error())
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create treatment plan"})
+		return
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		log.Println(err)
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+	SSE.Broadcaster.Broadcast("refresh")
+
+	c.JSON(http.StatusOK, gin.H{"message": "Appointment Registered Successfully"})
+
 }
 
 func RejectAppointment(c *gin.Context) {
@@ -303,7 +373,7 @@ func UnmarkAppointmentAsCompleted(c *gin.Context) {
 		}
 	}()
 
-	var treatmentPlanID uint
+	var treatmentPlanID *uint
 
 	if err := tx.Model(&Models.Appointment{}).Where("id = ?", input.ID).Select("treatment_plan_id").Find(&treatmentPlanID).Error; err != nil {
 		log.Println(err)
@@ -371,29 +441,6 @@ func RemoveAppointment(c *gin.Context) {
 		}
 	}()
 
-	var treatmentPlanID uint
-
-	if err := tx.Model(&Models.Appointment{}).Where("time_block_id = ?", input.ID).Select("treatment_plan_id").Find(&treatmentPlanID).Error; err != nil {
-		log.Println(err)
-		tx.Rollback()
-		c.JSON(http.StatusBadRequest, err)
-		c.Abort()
-		return
-	}
-
-	var TreatmentPlan Models.TreatmentPlan
-
-	if err := tx.Model(&Models.TreatmentPlan{}).Where("id = ?", treatmentPlanID).First(&TreatmentPlan).Error; err == nil {
-
-		if err := tx.Save(&TreatmentPlan).Error; err != nil {
-			log.Println(err)
-			tx.Rollback()
-			c.JSON(http.StatusBadRequest, err)
-			c.Abort()
-			return
-		}
-	}
-
 	if err := tx.Model(&Models.TimeBlock{}).Delete("id = ?", input.ID).Error; err != nil {
 		log.Println(err)
 		tx.Rollback()
@@ -426,6 +473,67 @@ func RemoveAppointment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted Successfully"})
+}
+
+func RemovePackage(c *gin.Context) {
+	var input struct {
+		ID uint `json:"id"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, err)
+		c.Abort()
+		return
+	}
+	tx := Models.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback() // Rollback the transaction in case of panic
+		}
+	}()
+	var treatmentPlan Models.TreatmentPlan
+	if err := tx.Model(&Models.TreatmentPlan{}).Preload("Appointments").Where("id = ?", &input.ID).First(&treatmentPlan).Error; err != nil {
+		log.Println(err)
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, err)
+		c.Abort()
+		return
+	}
+
+	for _, appointment := range treatmentPlan.Appointments {
+		if err := tx.Delete(&Models.TimeBlock{}, "id = ?", appointment.TimeBlockID).Error; err != nil {
+			log.Println(err)
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, err)
+			c.Abort()
+			return
+		}
+		if err := tx.Delete(&Models.Appointment{}, "id = ?", appointment.ID).Error; err != nil {
+			log.Println(err)
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, err)
+			c.Abort()
+			return
+		}
+	}
+	if err := tx.Delete(&Models.TreatmentPlan{}, "id = ?", treatmentPlan.ID).Error; err != nil {
+		log.Println(err)
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, err)
+		c.Abort()
+		return
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		log.Println(err)
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Package Deleted Successfully",
+	})
 }
 
 func DeletePatient(c *gin.Context) {

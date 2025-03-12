@@ -97,7 +97,7 @@ func RequestAppointment(c *gin.Context) {
 		}()
 
 		if !strings.HasPrefix(input.PhoneNumber, "+") {
-			input.PhoneNumber = "+20" + input.PhoneNumber
+			input.PhoneNumber = "+2" + input.PhoneNumber
 		}
 
 		var patient Models.Patient
@@ -189,6 +189,17 @@ func FetchRequestedAppointments(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	c.JSON(http.StatusOK, output)
+}
+
+func FetchUnassignedAppointments(c *gin.Context) {
+	var output []Models.Appointment
+	if err := Models.DB.Model(&Models.Appointment{}).
+		Where("treatment_plan_id IS null").Find(&output).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	fmt.Println(output)
 	c.JSON(http.StatusOK, output)
 }
 

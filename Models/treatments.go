@@ -8,9 +8,9 @@ type TreatmentPlan struct {
 	SuperTreatmentPlanID uint               `json:"super_treatment_plan_id"`
 	SuperTreatmentPlan   SuperTreatmentPlan `json:"super_treatment_plan" gorm:"-"`
 	Remaining            uint               `json:"remaining"`
-	Discount             float64            `json:"discount"`          // Discount percentage (e.g., 10 for 10%)
-	ReferralID           *uint              `json:"referral_id"`       // Whether this session includes a referral discount
-	Referral             Referral           `json:"referral" gorm:"-"` // Whether this session includes a referral discount
+	Discount             float64            `json:"discount"`                         // Discount percentage (e.g., 10 for 10%)
+	ReferralID           *uint              `json:"referral_id"  gorm:"default:null"` // Whether this session includes a referral discount
+	Referral             Referral           `json:"referral" gorm:"-"`                // Whether this session includes a referral discount
 	TotalPrice           float64            `json:"total_price"`
 	PatientID            uint               `json:"patient_id"`
 	PaymentMethod        string             `json:"payment_method"`

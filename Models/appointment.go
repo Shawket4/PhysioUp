@@ -19,7 +19,7 @@ type Appointment struct {
 	IsPaid          bool    `json:"is_paid"`
 	PaymentMethod   string  `json:"payment_method"`
 	Notes           string  `json:"notes"`
-	TreatmentPlanID uint    `json:"treatment_plan_id"`
+	TreatmentPlanID *uint   `json:"treatment_plan_id" gorm:"default:null"`
 }
 
 type AppointmentRequest struct {
@@ -31,7 +31,7 @@ type AppointmentRequest struct {
 	PatientID                     uint   `json:"patient_id"`
 	PhoneNumber                   string `json:"phone_number"`
 	SuperTreatmentPlanDescription string `json:"super_treatment_plan_description"`
-	IsExisting                    bool   `json:"is_existing" gorm"-"`
+	IsExisting                    bool   `json:"is_existing" gorm:"-"`
 }
 
 func (patient *Patient) GenerateOTPToken(count int) {
