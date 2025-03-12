@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -193,6 +194,11 @@ func UpdatePatient(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
 		return
 	}
+
+	if !strings.HasPrefix(input.Phone, "+") {
+		input.Phone = "+20" + input.Phone
+	}
+
 	patient.Name = input.Name
 	patient.Phone = input.Phone
 	patient.Gender = input.Gender
@@ -216,6 +222,9 @@ func CreatePatient(c *gin.Context) {
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
 		return
+	}
+	if !strings.HasPrefix(input.Phone, "+") {
+		input.Phone = "+20" + input.Phone
 	}
 	input.IsVerified = true
 

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -94,6 +95,10 @@ func RequestAppointment(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong, transaction rolled back"})
 			}
 		}()
+
+		if !strings.HasPrefix(input.PhoneNumber, "+") {
+			input.PhoneNumber = "+20" + input.PhoneNumber
+		}
 
 		var patient Models.Patient
 
