@@ -396,6 +396,10 @@ func GetPatientIdByPhone(c *gin.Context) {
 		return
 	}
 
+	if !strings.HasPrefix(input.PhoneNumber, "+") {
+		input.PhoneNumber = "+2" + input.PhoneNumber
+	}
+
 	var patient Models.Patient
 	if err := Models.DB.Where("phone = ?", input.PhoneNumber).First(&patient).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "No patient found with this phone number"})

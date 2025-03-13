@@ -373,7 +373,7 @@ func UnmarkAppointmentAsCompleted(c *gin.Context) {
 		}
 	}()
 
-	var treatmentPlanID *uint
+	var treatmentPlanID uint
 
 	if err := tx.Model(&Models.Appointment{}).Where("id = ?", input.ID).Select("treatment_plan_id").Find(&treatmentPlanID).Error; err != nil {
 		log.Println(err)
