@@ -83,20 +83,71 @@ func GetTherapists(c *gin.Context) {
 }
 
 func GetTherapistsTrimmed(c *gin.Context) {
-	var therapists []Models.Therapist
+	// Define response structures without the gorm.Model fields
+	type TimeBlockDTO struct {
+		ID          uint   `json:"id"`
+		DateTime    string `json:"date"`
+		IsAvailable bool   `json:"is_available"`
+	}
 
-	// Get current date only in your format "yyyy/MM/dd"
+	type ScheduleDTO struct {
+		ID         uint           `json:"id"`
+		TimeBlocks []TimeBlockDTO `json:"time_blocks"`
+	}
+
+	type TherapistDTO struct {
+		ID       uint        `json:"id"`
+		Name     string      `json:"name"`
+		UserID   uint        `json:"user_id"`
+		Phone    string      `json:"phone"`
+		Schedule ScheduleDTO `json:"schedule"`
+		PhotoUrl string      `json:"photo_url"`
+		IsDemo   bool        `json:"is_demo"`
+		IsFrozen bool        `json:"is_frozen"`
+	}
+
+	// Fetch data from database
+	var therapists []Models.Therapist
 	currentDate := time.Now().Format("2006/01/02")
 
 	if err := Models.DB.Model(&Models.Therapist{}).
-		// Filter by date portion only, including all times from today and future dates
 		Preload("Schedule.TimeBlocks", "substr(date_time, 1, 10) >= ?", currentDate).
 		Preload("Schedule.TimeBlocks.Appointment").
 		Find(&therapists).Error; err != nil {
 		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch therapists"})
 		return
 	}
 
-	c.JSON(http.StatusOK, therapists)
+	// Convert to DTO without gorm.Model fields
+	var therapistDTOs []TherapistDTO
+	for _, therapist := range therapists {
+		therapistDTO := TherapistDTO{
+			ID:       therapist.ID,
+			Name:     therapist.Name,
+			UserID:   therapist.UserID,
+			Phone:    therapist.Phone,
+			PhotoUrl: therapist.PhotoUrl,
+			IsDemo:   therapist.IsDemo,
+			IsFrozen: therapist.IsFrozen,
+			Schedule: ScheduleDTO{
+				ID: therapist.Schedule.ID,
+			},
+		}
+
+		// Add time blocks
+		for _, block := range therapist.Schedule.TimeBlocks {
+			blockDTO := TimeBlockDTO{
+				ID:          block.ID,
+				DateTime:    block.DateTime,
+				IsAvailable: block.IsAvailable,
+			}
+
+			therapistDTO.Schedule.TimeBlocks = append(therapistDTO.Schedule.TimeBlocks, blockDTO)
+		}
+
+		therapistDTOs = append(therapistDTOs, therapistDTO)
+	}
+
+	c.JSON(http.StatusOK, therapistDTOs)
 }

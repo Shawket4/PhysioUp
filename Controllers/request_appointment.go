@@ -368,23 +368,44 @@ func FetchAppointmentsByPatientID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var Appointments []Models.Appointment
-	var AppointmentRequests []Models.AppointmentRequest
-	if err := Models.DB.Model(&Models.Appointment{}).Where("patient_id = ?", input.ID).Find(&Appointments).Error; err != nil {
+
+	// For Appointments: Select only the required fields
+	type AppointmentResponse struct {
+		ID            uint   `json:"id"`
+		DateTime      string `json:"date_time"`
+		TherapistName string `json:"therapist_name"`
+		IsCompleted   bool   `json:"is_completed"`
+	}
+
+	var appointmentResponses []AppointmentResponse
+	if err := Models.DB.Model(&Models.Appointment{}).
+		Select("id, date_time, therapist_name, is_completed").
+		Where("patient_id = ?", input.ID).
+		Find(&appointmentResponses).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := Models.DB.Model(&Models.AppointmentRequest{}).Where("patient_id = ?", input.ID).Find(&AppointmentRequests).Error; err != nil {
+	// For AppointmentRequests: Select only the required fields
+	type RequestResponse struct {
+		ID            uint   `json:"id"`
+		DateTime      string `json:"date_time"`
+		TherapistName string `json:"therapist_name"`
+	}
+
+	var requestResponses []RequestResponse
+	if err := Models.DB.Model(&Models.AppointmentRequest{}).
+		Select("id, date_time, therapist_name").
+		Where("patient_id = ?", input.ID).
+		Find(&requestResponses).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"appointments": Appointments,
-		"requests":     AppointmentRequests,
+		"appointments": appointmentResponses,
+		"requests":     requestResponses,
 	})
-
 }
 
 func GetPatientIdByPhone(c *gin.Context) {
