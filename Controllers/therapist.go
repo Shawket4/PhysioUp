@@ -85,18 +85,18 @@ func GetTherapists(c *gin.Context) {
 func GetTherapistsTrimmed(c *gin.Context) {
 	// Define response structures without the gorm.Model fields
 	type TimeBlockDTO struct {
-		ID          uint   `json:"id"`
+		ID          uint   `json:"ID"`
 		DateTime    string `json:"date"`
 		IsAvailable bool   `json:"is_available"`
 	}
 
 	type ScheduleDTO struct {
-		ID         uint           `json:"id"`
+		ID         uint           `json:"ID"`
 		TimeBlocks []TimeBlockDTO `json:"time_blocks"`
 	}
 
 	type TherapistDTO struct {
-		ID       uint        `json:"id"`
+		ID       uint        `json:"ID"`
 		Name     string      `json:"name"`
 		UserID   uint        `json:"user_id"`
 		Phone    string      `json:"phone"`
