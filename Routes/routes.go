@@ -7,10 +7,12 @@ import (
 
 	"PhysioUp/Middleware"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )
 
 func ConfigRoutes(router *gin.Engine) {
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	authorized := router.Group("/api/protected")
 	authorized.Use(Middleware.JwtAuthMiddleware())
 	authorized.GET("/user", Controllers.CurrentUser)

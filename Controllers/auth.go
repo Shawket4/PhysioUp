@@ -114,11 +114,13 @@ type RegisterInput struct {
 }
 
 func Register(c *gin.Context) {
+
 	var input RegisterInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	user := Models.User{}
 
 	user.Username = input.Username
