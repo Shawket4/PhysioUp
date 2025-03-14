@@ -12,7 +12,7 @@ import (
 )
 
 func ConfigRoutes(router *gin.Engine) {
-	router.Use(gzip.Gzip(gzip.DefaultCompression))
+	router.Use(gzip.Gzip(gzip.BestSpeed))
 	authorized := router.Group("/api/protected")
 	authorized.Use(Middleware.JwtAuthMiddleware())
 	authorized.GET("/user", Controllers.CurrentUser)
