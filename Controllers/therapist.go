@@ -1,6 +1,7 @@
 package Controllers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -12,20 +13,70 @@ import (
 )
 
 func GetTherapistSchedule(c *gin.Context) {
+	const PaginationValue = 6 // Number of weeks per page
+	var input struct {
+		StartDate string `json:"start_date"`
+		EndDate   string `json:"end_date"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	fmt.Println(input)
 	user_id, err := Token.ExtractTokenID(c)
-
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	var therapist Models.Therapist
-
-	if err := Models.DB.Model(&Models.Therapist{}).Where("user_id = ?", user_id).Preload("Schedule.TimeBlocks.Appointment").First(&therapist).Error; err != nil {
+	if err := Models.DB.Model(&Models.Therapist{}).Where("user_id = ?", user_id).First(&therapist).Error; err != nil {
 		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Default to current month if dates are not provided
+	if input.StartDate == "" || input.EndDate == "" {
+		now := time.Now()
+		// First day of current month
+		firstDay := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		// Last day of current month
+		lastDay := firstDay.AddDate(0, 1, -1)
+
+		input.StartDate = firstDay.Format("2006/01/02")
+		input.EndDate = lastDay.Format("2006/01/02")
+
+		fmt.Println("Using default date range:", input.StartDate, "to", input.EndDate)
+	}
+
+	// Fetch therapist with schedule
+	if err := Models.DB.Model(&Models.Therapist{}).Where("user_id = ?", user_id).Preload("Schedule").First(&therapist).Error; err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Use raw SQL query with BETWEEN and LIKE to handle string date format
+	query := `
+		SELECT tb.* FROM time_blocks tb
+		WHERE tb.schedule_id = ?
+		AND (
+			SUBSTR(tb.date_time, 1, 10) BETWEEN ? AND ?
+		)
+		AND tb.deleted_at IS NULL
+	`
+	var timeBlocks []Models.TimeBlock
+	if err := Models.DB.Raw(query, therapist.Schedule.ID, input.StartDate, input.EndDate).
+		Preload("Appointment").
+		Find(&timeBlocks).Error; err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Assign filtered time blocks to the schedule
+	therapist.Schedule.TimeBlocks = timeBlocks
 
 	c.JSON(http.StatusOK, therapist)
 }

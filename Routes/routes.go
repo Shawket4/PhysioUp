@@ -47,7 +47,7 @@ func ConfigRoutes(router *gin.Engine) {
 	authorized.POST("/RemoveAppointment", Controllers.RemoveAppointment)
 	authorized.POST("/RemovePackage", Controllers.RemovePackage)
 	public.POST("/RegisterTherapist", Controllers.RegisterTherapist)
-	authorized.GET("/GetTherapistSchedule", Controllers.GetTherapistSchedule)
+	authorized.POST("/GetTherapistSchedule", Controllers.GetTherapistSchedule)
 	authorized.POST("/AddTherapistTimeBlocks", Controllers.AddTherapistTimeBlocks)
 	authorized.GET("/FetchPatients", Controllers.FetchPatients)
 	authorized.GET("/GetTherapists", Controllers.GetTherapists)
