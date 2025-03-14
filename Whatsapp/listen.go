@@ -53,6 +53,7 @@ func CheckLogin(c *gin.Context) {
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	var output struct {
 		Code    string `json:"code"`
@@ -64,6 +65,7 @@ func CheckLogin(c *gin.Context) {
 	}
 	if err = json.Unmarshal(body, &output); err != nil {
 		log.Println(err)
+		return
 	}
 
 	if len(output.Results) == 0 {

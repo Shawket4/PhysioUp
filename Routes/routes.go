@@ -50,7 +50,7 @@ func ConfigRoutes(router *gin.Engine) {
 	authorized.GET("/GetTherapistSchedule", Controllers.GetTherapistSchedule)
 	authorized.POST("/AddTherapistTimeBlocks", Controllers.AddTherapistTimeBlocks)
 	authorized.GET("/FetchPatients", Controllers.FetchPatients)
-	public.GET("/GetTherapists", Controllers.GetTherapists)
+	authorized.GET("/GetTherapists", Controllers.GetTherapists)
 	public.GET("/GetTherapistsTrimmed", Controllers.GetTherapistsTrimmed)
 	authorized.POST("/FetchPatientFilesURLs", Controllers.FetchPatientFilesURLs)
 	authorized.POST("/FetchReferralPackages", Controllers.FetchReferralPackages)

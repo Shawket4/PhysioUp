@@ -23,13 +23,6 @@ type Schedule struct {
 	TimeBlocks  []TimeBlock `json:"time_blocks"`
 }
 
-// type DoctorWorkingHour struct {
-// 	gorm.Model
-// 	DoctorID uint
-// 	Time     string `json:"time"`
-
-// }
-
 type TimeBlock struct {
 	gorm.Model
 	ScheduleID  uint
