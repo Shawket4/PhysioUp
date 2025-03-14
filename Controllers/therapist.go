@@ -3,6 +3,7 @@ package Controllers
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"PhysioUp/Models"
 	"PhysioUp/Utils/Token"
@@ -73,6 +74,25 @@ func AddTherapistTimeBlocks(c *gin.Context) {
 func GetTherapists(c *gin.Context) {
 	var therapists []Models.Therapist
 	if err := Models.DB.Model(&Models.Therapist{}).Preload("Schedule.TimeBlocks.Appointment").Find(&therapists).Error; err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, therapists)
+}
+
+func GetTherapistsTrimmed(c *gin.Context) {
+	var therapists []Models.Therapist
+
+	// Get current date only in your format "yyyy/MM/dd"
+	currentDate := time.Now().Format("2006/01/02")
+
+	if err := Models.DB.Model(&Models.Therapist{}).
+		// Filter by date portion only, including all times from today and future dates
+		Preload("Schedule.TimeBlocks", "substr(date_time, 1, 10) >= ?", currentDate).
+		Preload("Schedule.TimeBlocks.Appointment").
+		Find(&therapists).Error; err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err)
 		return

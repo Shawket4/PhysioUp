@@ -49,6 +49,7 @@ func ConfigRoutes(router *gin.Engine) {
 	authorized.POST("/AddTherapistTimeBlocks", Controllers.AddTherapistTimeBlocks)
 	authorized.GET("/FetchPatients", Controllers.FetchPatients)
 	public.GET("/GetTherapists", Controllers.GetTherapists)
+	public.GET("/GetTherapistsTrimmed", Controllers.GetTherapistsTrimmed)
 	authorized.POST("/FetchPatientFilesURLs", Controllers.FetchPatientFilesURLs)
 	authorized.POST("/FetchReferralPackages", Controllers.FetchReferralPackages)
 	authorized.POST("/ExportReferredPackagesExcel", Controllers.ExportReferredPackagesExcel)
