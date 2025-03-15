@@ -6,9 +6,27 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/go-co-op/gocron"
 )
 
 // StartReminderCron starts the cron job to check for appointments and send reminders
+func StartReminderCron() *gocron.Scheduler {
+	scheduler := gocron.NewScheduler(time.Local)
+
+	// Run every 15 minutes to check for appointments that need reminders
+	scheduler.Every(1).Minutes().Do(func() {
+		log.Println("Running appointment reminder check...")
+		if err := SendAppointmentReminders(); err != nil {
+			log.Printf("Error sending appointment reminders: %v", err)
+		}
+	})
+
+	scheduler.StartAsync()
+	log.Println("Appointment reminder cron job started")
+
+	return scheduler
+}
 func SendAppointmentReminders() error {
 	// Current time
 	now := time.Now()
