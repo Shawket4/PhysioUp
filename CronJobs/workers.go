@@ -28,7 +28,7 @@ func (ar *AppointmentReminder) StartReminderCron() *gocron.Scheduler {
 	scheduler := gocron.NewScheduler(time.Local)
 
 	// Run every 15 minutes to check for appointments that need reminders
-	scheduler.Every(15).Minutes().Do(func() {
+	scheduler.Every(1).Minutes().Do(func() {
 		log.Println("Running appointment reminder check...")
 		if err := ar.SendAppointmentReminders(); err != nil {
 			log.Printf("Error sending appointment reminders: %v", err)
