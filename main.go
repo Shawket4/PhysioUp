@@ -1,6 +1,7 @@
 package main
 
 import (
+	"PhysioUp/CronJobs"
 	"PhysioUp/Models"
 	"PhysioUp/Routes"
 
@@ -19,6 +20,9 @@ func main() {
 	},
 	))
 	Routes.ConfigRoutes(router)
+	reminderService := CronJobs.NewAppointmentReminder(Models.DB)
+	scheduler := reminderService.StartReminderCron()
+	_ = scheduler
 	// go func() {
 
 	// }()
