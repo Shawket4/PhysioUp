@@ -88,8 +88,8 @@ func SendAppointmentReminders() error {
 
 		// Create and send reminder message
 		message := fmt.Sprintf(
-			"Reminder: You have an appointment with %s today at %s (in 3 hours). "+
-				"Please arrive 10 minutes early. If you need to reschedule, please contact us.",
+			"Reminder: You have an appointment with Dr. %s today at %s (in 3 hours). "+
+				"Please arrive on time. If you need to reschedule, please contact us.",
 			appointment.TherapistName,
 			appointmentTime.Format("3:04 PM"),
 		)
