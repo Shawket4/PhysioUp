@@ -36,8 +36,8 @@ func SendAppointmentReminders() error {
 
 	// Get all of today's non-completed appointments that haven't had reminders sent yet
 	var appointments []Models.Appointment
-	result := Models.DB.Joins("JOIN patients ON appointments.patient_id = patients.id").
-		Where("appointments.is_completed = ? AND appointments.reminder_sent = ? AND appointments.date_time LIKE ?",
+	result := Models.DB.Model(&Models.Appointment{}).
+		Where("is_completed = ? AND reminder_sent = ? AND date_time LIKE ?",
 			false,
 			false,
 			todayDate+"%").
@@ -46,7 +46,7 @@ func SendAppointmentReminders() error {
 	if result.Error != nil {
 		return fmt.Errorf("failed to query today's appointments: %w", result.Error)
 	}
-
+	fmt.Println(appointments)
 	// Filter appointments that are approximately 3 hours away
 	var appointmentsToRemind []Models.Appointment
 	for _, appointment := range appointments {
