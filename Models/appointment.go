@@ -20,6 +20,7 @@ type Appointment struct {
 	PaymentMethod   string  `json:"payment_method"`
 	Notes           string  `json:"notes"`
 	TreatmentPlanID *uint   `json:"treatment_plan_id" gorm:"default:null"`
+	ReminderSent    bool    `json:"reminder_sent"`
 }
 
 type AppointmentRequest struct {

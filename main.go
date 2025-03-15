@@ -20,8 +20,7 @@ func main() {
 	},
 	))
 	Routes.ConfigRoutes(router)
-	reminderService := CronJobs.NewAppointmentReminder(Models.DB)
-	scheduler := reminderService.StartReminderCron()
+	scheduler := CronJobs.StartReminderCron()
 	_ = scheduler
 	// go func() {
 
