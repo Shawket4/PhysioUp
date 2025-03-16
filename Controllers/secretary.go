@@ -468,6 +468,7 @@ func RemoveAppointmentSendMessage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
 		return
 	}
+
 	Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
 
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted Successfully"})

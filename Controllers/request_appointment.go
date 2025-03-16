@@ -6,6 +6,7 @@ import (
 	"PhysioUp/Utils/Token"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -205,22 +206,64 @@ func FetchUnassignedAppointments(c *gin.Context) {
 
 func FetchPatientCurrentPackage(c *gin.Context) {
 	var input struct {
-		PatientID uint `json:"patient_id"`
+		PatientID uint `json:"patient_id" binding:"required"`
 	}
+
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
 		return
 	}
-	var Package Models.TreatmentPlan
-	if err := Models.DB.Model(&Models.TreatmentPlan{}).Where("patient_id = ?", input.PatientID).Last(&Package).Error; err != nil {
-		c.JSON(http.StatusOK, nil)
+
+	// Validate PatientID
+	if input.PatientID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Patient ID cannot be zero"})
 		return
 	}
-	if err := Models.DB.Model(&Models.SuperTreatmentPlan{}).Where("id = ?", Package.SuperTreatmentPlanID).Find(&Package.SuperTreatmentPlan).Error; err != nil {
-		c.JSON(http.StatusOK, nil)
+
+	// First, get the latest treatment plan ID
+	var treatmentPlan Models.TreatmentPlan
+	if err := Models.DB.Model(&Models.TreatmentPlan{}).
+		Where("patient_id = ?", input.PatientID).
+		Order("created_at DESC").
+		First(&treatmentPlan).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusOK, gin.H{"message": "No treatment plan found for this patient"})
+		} else {
+			log.Printf("Error fetching treatment plan: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error when fetching treatment plan"})
+		}
 		return
 	}
-	c.JSON(http.StatusOK, Package)
+
+	// Get the super treatment plan details
+	if err := Models.DB.Model(&Models.SuperTreatmentPlan{}).
+		Where("id = ?", treatmentPlan.SuperTreatmentPlanID).
+		First(&treatmentPlan.SuperTreatmentPlan).Error; err != nil {
+		log.Printf("Error fetching super treatment plan: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error when fetching super treatment plan"})
+		return
+	}
+
+	// Count the appointments in a separate query
+	var appointmentCount int64
+	if err := Models.DB.Model(&Models.Appointment{}).
+		Where("treatment_plan_id = ?", treatmentPlan.ID).
+		Count(&appointmentCount).Error; err != nil {
+		log.Printf("Error counting appointments: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error when counting appointments"})
+		return
+	}
+
+	// Create a response object that includes the appointment count but not the appointments themselves
+	response := struct {
+		Models.TreatmentPlan
+		AppointmentsCount int64 `json:"appointments_count"`
+	}{
+		TreatmentPlan:     treatmentPlan,
+		AppointmentsCount: appointmentCount,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func FetchPatientPackages(c *gin.Context) {
