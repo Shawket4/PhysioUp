@@ -14,7 +14,6 @@ import (
 func StartReminderCron() *gocron.Scheduler {
 	scheduler := gocron.NewScheduler(time.Local)
 
-	// Run every 15 minutes to check for appointments that need reminders
 	scheduler.Every(10).Minutes().Do(func() {
 		log.Println("Running appointment reminder check...")
 		if err := SendAppointmentReminders(); err != nil {
@@ -60,10 +59,10 @@ func SendAppointmentReminders() error {
 		// Calculate time difference
 		timeDiff := appointmentTime.Sub(now)
 
-		// Check if appointment is approximately 3 hours away (within the window)
-		if timeDiff >= 2*time.Hour+53*time.Minute && timeDiff <= 3*time.Hour+7*time.Minute {
+		if timeDiff < 3*time.Hour {
 			appointmentsToRemind = append(appointmentsToRemind, appointment)
 		}
+		
 	}
 
 	// Process each appointment that needs a reminder
