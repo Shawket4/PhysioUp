@@ -256,8 +256,8 @@ func FetchPatientCurrentPackage(c *gin.Context) {
 
 	// Create a response object that includes the appointment count but not the appointments themselves
 	response := struct {
-		Models.TreatmentPlan
-		AppointmentsCount int64 `json:"appointments_count"`
+		Models.TreatmentPlan `json:"treatment_plan"`
+		AppointmentsCount    int64 `json:"appointments_count"`
 	}{
 		TreatmentPlan:     treatmentPlan,
 		AppointmentsCount: appointmentCount,
