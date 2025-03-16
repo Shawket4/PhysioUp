@@ -44,7 +44,7 @@ func ConfigRoutes(router *gin.Engine) {
 	authorized.POST("/RejectAppointment", Controllers.RejectAppointment)
 	authorized.POST("/MarkAppointmentAsCompleted", Controllers.MarkAppointmentAsCompleted)
 	authorized.POST("/UnmarkAppointmentAsCompleted", Controllers.UnmarkAppointmentAsCompleted)
-	authorized.POST("/RemoveAppointment", Controllers.RemoveAppointment)
+	authorized.POST("/RemoveAppointmentSendMessage", Controllers.RemoveAppointmentSendMessage)
 	authorized.POST("/RemovePackage", Controllers.RemovePackage)
 	public.POST("/RegisterTherapist", Controllers.RegisterTherapist)
 	authorized.POST("/GetTherapistSchedule", Controllers.GetTherapistSchedule)

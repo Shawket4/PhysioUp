@@ -62,7 +62,7 @@ func SendAppointmentReminders() error {
 		if timeDiff < 3*time.Hour {
 			appointmentsToRemind = append(appointmentsToRemind, appointment)
 		}
-		
+
 	}
 
 	// Process each appointment that needs a reminder
@@ -87,7 +87,7 @@ func SendAppointmentReminders() error {
 
 		// Create and send reminder message
 		message := fmt.Sprintf(
-			"Reminder: You have an appointment with Dr. %s today at %s (in 3 hours). "+
+			"Reminder: You have an appointment with Dr. %s today at %s"+
 				"Please arrive on time. If you need to reschedule, please contact us.",
 			appointment.TherapistName,
 			appointmentTime.Format("3:04 PM"),

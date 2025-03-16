@@ -248,26 +248,6 @@ func RejectAppointment(c *gin.Context) {
 		return
 	}
 
-	// client := twilio.NewRestClient()
-
-	// params := &api.CreateMessageParams{}
-
-	// params.SetBody(fmt.Sprintf("Your Appointment has been rejected please choose another appointment or contact the clinic\nتم رفض الحجز برجاء اختيار ميعاد اخر او التواصل مع العيادة"))
-	// params.SetFrom("+15076936009")
-	// params.SetTo(appointmentReq.PhoneNumber)
-
-	// resp, err := client.Api.CreateMessage(params)
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	os.Exit(1)
-	// } else {
-	// 	if resp.Body != nil {
-	// 		fmt.Println(*resp.Body)
-	// 	} else {
-	// 		fmt.Println(resp.Body)
-	// 	}
-	// }
-
 	if err := tx.Delete(&Models.AppointmentRequest{}, "id = ?", input.ID).Error; err != nil {
 		log.Println(err)
 		tx.Rollback()
@@ -283,7 +263,7 @@ func RejectAppointment(c *gin.Context) {
 		return
 	}
 	SSE.Broadcaster.Broadcast("refresh")
-
+	Whatsapp.SendMessage(appointmentReq.PhoneNumber, "We're sorry. Your appointment has been rejected, please contact the clinic to reschedule")
 	c.JSON(http.StatusOK, gin.H{"message": "Rejected Successfully"})
 }
 
@@ -421,7 +401,7 @@ func UnmarkAppointmentAsCompleted(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Marked Successfully"})
 }
 
-func RemoveAppointment(c *gin.Context) {
+func RemoveAppointmentSendMessage(c *gin.Context) {
 	var input struct {
 		ID uint `json:"ID"`
 	}
@@ -441,6 +421,23 @@ func RemoveAppointment(c *gin.Context) {
 		}
 	}()
 
+	var TimeBlock Models.TimeBlock
+
+	if err := tx.Model(&Models.TimeBlock{}).Where("id = ?", input.ID).Preload("Appointment").First(&TimeBlock).Error; err != nil {
+		log.Println(err)
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, err)
+		c.Abort()
+		return
+	}
+	var Patient Models.Patient
+	if err := tx.Model(&Models.Patient{}).Where("id = ?", TimeBlock.Appointment.PatientID).First(&Patient).Error; err != nil {
+		log.Println(err)
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, err)
+		c.Abort()
+		return
+	}
 	if err := tx.Model(&Models.TimeBlock{}).Delete("id = ?", input.ID).Error; err != nil {
 		log.Println(err)
 		tx.Rollback()
@@ -471,6 +468,7 @@ func RemoveAppointment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
 		return
 	}
+	Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
 
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted Successfully"})
 }
