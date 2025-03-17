@@ -432,13 +432,8 @@ func RemoveAppointmentSendMessage(c *gin.Context) {
 		return
 	}
 	var Patient Models.Patient
-	if err := tx.Model(&Models.Patient{}).Where("id = ?", TimeBlock.Appointment.PatientID).First(&Patient).Error; err != nil {
-		log.Println(err)
-		tx.Rollback()
-		c.JSON(http.StatusBadRequest, err)
-		c.Abort()
-		return
-	}
+	tx.Model(&Models.Patient{}).Where("id = ?", TimeBlock.Appointment.PatientID).First(&Patient)
+
 	if err := tx.Model(&Models.TimeBlock{}).Delete("id = ?", input.ID).Error; err != nil {
 		log.Println(err)
 		tx.Rollback()
@@ -469,10 +464,10 @@ func RemoveAppointmentSendMessage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
 		return
 	}
-
-	Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
-
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted Successfully"})
+	if Patient.Phone != "" {
+		Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
+	}
 }
 
 func RemovePackage(c *gin.Context) {
