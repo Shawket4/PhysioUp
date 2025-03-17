@@ -204,16 +204,6 @@ func AddTherapistTimeBlocks(c *gin.Context) {
 			return
 		}
 
-		// Validate date format
-		_, err := time.Parse("2006/01/02 15:04", dateTimeStr)
-		if err != nil {
-			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": fmt.Sprintf("Invalid date format for %s. Use YYYY/MM/DD HH:MM", dateTimeStr),
-			})
-			return
-		}
-
 		// Create new time block
 		timeBlock := Models.CreateEmptyTimeBlock(schedule, dateTimeStr)
 		if err := tx.Create(&timeBlock).Error; err != nil {
