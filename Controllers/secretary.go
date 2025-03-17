@@ -50,6 +50,7 @@ func AcceptAppointment(c *gin.Context) {
 	appointment.TherapistName = appointmentRequest.TherapistName
 	appointment.PatientID = appointmentRequest.PatientID
 	appointment.TreatmentPlanID = nil
+	appointment.ClinicGroupID = appointmentRequest.ClinicGroupID
 	// Handle treatment plan
 	// if input.TreatmentPlan.ID == 0 {
 	// 	// Create a new treatment plan

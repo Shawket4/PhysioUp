@@ -13,11 +13,12 @@ import (
 
 type User struct {
 	gorm.Model
-	Username   string        `gorm:"size:255;not null;unique" json:"username"`
-	Password   string        `gorm:"size:255;not null;" json:"password"`
-	Permission int           `json:"permission"`
-	Tokens     []DeviceToken `gorm:"foreignKey:UserID"`
-	IsFrozen   bool          `json:"is_frozen"`
+	Username      string        `gorm:"size:255;not null;unique" json:"username"`
+	Password      string        `gorm:"size:255;not null;" json:"password"`
+	Permission    int           `json:"permission"`
+	Tokens        []DeviceToken `gorm:"foreignKey:UserID"`
+	IsFrozen      bool          `json:"is_frozen"`
+	ClinicGroupID uint          `json:"clinic_group_id"`
 }
 
 type DeviceToken struct {
@@ -29,7 +30,7 @@ type DeviceToken struct {
 func GetUserByID(uid uint) (User, error) {
 	var user User
 
-	if err := DB.Preload("Tokens").First(&user, uid).Error; err != nil {
+	if err := DB.First(&user, uid).Error; err != nil {
 		return user, errors.New("User not found")
 	}
 
@@ -37,6 +38,15 @@ func GetUserByID(uid uint) (User, error) {
 
 	return user, nil
 
+}
+
+func GetUserClinicGroupID(uid uint) (uint, error) {
+	var clinic_id uint
+	if err := DB.Model(&User{}).Where("id = ?", uid).Select("clinic_group_id").First(&clinic_id).Error; err != nil {
+		return 0, errors.New("Clinic group not found")
+	}
+
+	return clinic_id, nil
 }
 
 func (user *User) ChangeState() {

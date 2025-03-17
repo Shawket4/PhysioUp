@@ -12,6 +12,15 @@ import (
 
 var DB *gorm.DB
 
+func ClinicGroupExists(id uint) (bool, error) {
+	var count int64
+	err := DB.Model(&ClinicGroup{}).Where("id = ?", id).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func ConnectDataBase() {
 
 	err := godotenv.Load(".env")
@@ -36,9 +45,25 @@ func ConnectDataBase() {
 	} else {
 		fmt.Println("We are connected to the database ")
 	}
-
-	DB.AutoMigrate(&Referral{}, &Patient{}, &TreatmentPlan{}, &SuperTreatmentPlan{}, &User{}, &Therapist{}, &AppointmentRequest{}, &Schedule{}, &TimeBlock{}, &Appointment{})
+	// First migrate models with no dependencies
+	DB.AutoMigrate(&ClinicGroup{})
+	DB.AutoMigrate(&SuperTreatmentPlan{})
 	DB.AutoMigrate(&DeviceToken{})
+
+	// Then migrate models that depend on the above
+	DB.AutoMigrate(&User{})
+	DB.AutoMigrate(&Patient{})
+	DB.AutoMigrate(&Therapist{})
+
+	// Then migrate models that depend on the previous ones
+	DB.AutoMigrate(&TreatmentPlan{})
+	DB.AutoMigrate(&Schedule{})
+
+	// Finally migrate models that depend on multiple other models
+	DB.AutoMigrate(&TimeBlock{})
+	DB.AutoMigrate(&Referral{})
+	DB.AutoMigrate(&AppointmentRequest{})
+	DB.AutoMigrate(&Appointment{})
 	// var plan SuperTreatmentPlan = SuperTreatmentPlan{Description: "One Organ - 6 Sessions", SessionsCount: 6}
 	// DB.Save(&plan)
 	// DB.AutoMigrate(&DoctorWorkingHour{})

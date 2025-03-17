@@ -12,8 +12,9 @@ import (
 )
 
 func FetchSuperTreatments(c *gin.Context) {
+	db := getScopedDB(c)
 	var SuperTreatments []Models.SuperTreatmentPlan
-	if err := Models.DB.Model(&Models.SuperTreatmentPlan{}).Find(&SuperTreatments).Error; err != nil {
+	if err := db.Model(&Models.SuperTreatmentPlan{}).Find(&SuperTreatments).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -22,6 +23,7 @@ func FetchSuperTreatments(c *gin.Context) {
 }
 
 func AddSuperTreatment(c *gin.Context) {
+
 	var input Models.SuperTreatmentPlan
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input format: " + err.Error()})
@@ -34,7 +36,14 @@ func AddSuperTreatment(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(input)
+	client_group_id, exists := c.Get("clinicGroupID")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: Client Group Not Set"})
+		return
+	}
+
+	input.ClinicGroupID = client_group_id.(uint)
+
 	if err := Models.DB.Create(&input).Error; err != nil {
 		// #4 - More specific error handling
 		if strings.Contains(err.Error(), "foreign key constraint") {

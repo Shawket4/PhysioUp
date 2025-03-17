@@ -8,8 +8,9 @@ import (
 )
 
 func FetchReferrals(c *gin.Context) {
+	db := getScopedDB(c)
 	var output []Models.Referral
-	if err := Models.DB.Model(&Models.Referral{}).Find(&output).Error; err != nil {
+	if err := db.Model(&Models.Referral{}).Find(&output).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -22,6 +23,15 @@ func AddReferral(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	client_group_id, exists := c.Get("clinicGroupID")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: Client Group Not Set"})
+		return
+	}
+
+	input.ClinicGroupID = client_group_id.(uint)
+
 	if err := Models.DB.Create(&input).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

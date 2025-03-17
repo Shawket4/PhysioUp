@@ -21,6 +21,7 @@ type Appointment struct {
 	Notes           string  `json:"notes"`
 	TreatmentPlanID *uint   `json:"treatment_plan_id" gorm:"default:null"`
 	ReminderSent    bool    `json:"reminder_sent"`
+	ClinicGroupID   uint    `json:"clinic_group_id"`
 }
 
 type AppointmentRequest struct {
@@ -33,6 +34,7 @@ type AppointmentRequest struct {
 	PhoneNumber                   string `json:"phone_number"`
 	SuperTreatmentPlanDescription string `json:"super_treatment_plan_description"`
 	IsExisting                    bool   `json:"is_existing" gorm:"-"`
+	ClinicGroupID                 uint   `json:"clinic_group_id"`
 }
 
 func (patient *Patient) GenerateOTPToken(count int) {

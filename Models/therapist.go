@@ -11,10 +11,9 @@ type Therapist struct {
 	Phone               string               `json:"phone"`
 	Schedule            Schedule             `json:"schedule"`
 	AppointmentRequests []AppointmentRequest `json:"requests"`
-	// DoctorWorkingHours []DoctorWorkingHour `json:"doctor_working_hours"`
-	PhotoUrl string `json:"photo_url"`
-	IsDemo   bool   `json:"is_demo"`
-	IsFrozen bool   `json:"is_frozen" gorm:"-"`
+	PhotoUrl            string               `json:"photo_url"`
+	IsDemo              bool                 `json:"is_demo"`
+	IsFrozen            bool                 `json:"is_frozen" gorm:"-"`
 }
 
 type Schedule struct {

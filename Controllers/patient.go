@@ -30,13 +30,15 @@ func FetchFutureAppointments(c *gin.Context) {
 }
 
 func FetchPatients(c *gin.Context) {
+	db := getScopedDB(c)
 	var patients []Models.Patient
-	if err := Models.DB.Model(&Models.Patient{}).Preload("History").Find(&patients).Error; err != nil {
+	if err := db.Model(&Models.Patient{}).Preload("History").Find(&patients).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, patients)
 }
+
 func FetchPatientFilesURLs(c *gin.Context) {
 	type FileInfo struct {
 		Name string  `json:"name"`
@@ -218,15 +220,25 @@ func UpdatePatient(c *gin.Context) {
 
 func CreatePatient(c *gin.Context) {
 	var input Models.Patient
+
 	// Bind JSON input
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
 		return
 	}
+
 	if !strings.HasPrefix(input.Phone, "+") {
 		input.Phone = "+2" + input.Phone
 	}
 	input.IsVerified = true
+
+	client_group_id, exists := c.Get("clinicGroupID")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: Client Group Not Set"})
+		return
+	}
+
+	input.ClinicGroupID = client_group_id.(uint)
 
 	if err := Models.DB.Create(&input).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})

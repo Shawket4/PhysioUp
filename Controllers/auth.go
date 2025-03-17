@@ -28,10 +28,11 @@ func CurrentUser(c *gin.Context) {
 		return
 	}
 	var output struct {
-		ID         uint   `json:"ID"`
-		Username   string `json:"username"`
-		ClinicName string `json:"clinic_name"`
-		Permission int    `json:"permission"`
+		ID            uint   `json:"ID"`
+		Username      string `json:"username"`
+		ClinicName    string `json:"clinic_name"`
+		Permission    int    `json:"permission"`
+		ClinicGroupID uint   `json:"clinic_group_id"`
 	}
 	// if user.Permission == 1 {
 	// 	var doctor Models.Doctor
@@ -44,6 +45,7 @@ func CurrentUser(c *gin.Context) {
 	output.ID = user_id
 	output.Username = user.Username
 	output.Permission = user.Permission
+	output.ClinicGroupID = user.ClinicGroupID
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": output})
 }
 
@@ -108,13 +110,13 @@ func Login(c *gin.Context) {
 }
 
 type RegisterInput struct {
-	Username   string `json:"username" binding:"required"`
-	Password   string `json:"password" binding:"required"`
-	Permission int    `json:"permission"`
+	Username      string `json:"username" binding:"required"`
+	Password      string `json:"password" binding:"required"`
+	Permission    int    `json:"permission" binding:"required"`
+	ClinicGroupID uint   `json:"clinic_group_id"`
 }
 
 func Register(c *gin.Context) {
-
 	var input RegisterInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -126,6 +128,7 @@ func Register(c *gin.Context) {
 	user.Username = input.Username
 	user.Password = input.Password
 	user.Permission = input.Permission
+	user.ClinicGroupID = input.ClinicGroupID // Don't forget to set this field
 	_, err := user.SaveUser()
 
 	if err != nil {
@@ -133,6 +136,21 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	c.JSON(http.StatusOK, gin.H{"data": "validated"})
+}
+
+func RegisterClinicGroup(c *gin.Context) {
+	var input Models.ClinicGroup
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := Models.DB.Create(&input).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"data": "validated"})
 }
 
@@ -144,11 +162,25 @@ func RegisterTherapist(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	if input.ClinicGroupID != 0 {
+		exists, err := Models.ClinicGroupExists(input.ClinicGroupID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check clinic group"})
+			return
+		}
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Clinic group ID does not exist"})
+			return
+		}
+	}
+
 	user := Models.User{}
 
 	user.Username = input.Username
 	user.Password = input.Password
 	user.Permission = 2
+	user.ClinicGroupID = input.ClinicGroupID
 	_, err := user.SaveUser()
 
 	if err != nil {
@@ -167,7 +199,7 @@ func RegisterTherapist(c *gin.Context) {
 	}
 	therapist.UserID = user.ID
 	therapist.Schedule = Models.Schedule{TherapistID: therapist.UserID}
-	therapist.Name = input.Username
+	therapist.Name = "Dr. " + input.Username
 	// Models.CreateDoctorWorkingHours(&doctor)
 	if err := Models.DB.Model(&Models.Therapist{}).Create(&therapist).Error; err != nil {
 		log.Println(err)

@@ -38,9 +38,9 @@ func RequestAppointment(c *gin.Context) {
 	if user_id != 0 {
 		user, _ = Models.GetUserByID(user_id)
 	}
-
+	input.ClinicGroupID = 1
 	if user.Permission < 2 {
-
+		input.ClinicGroupID = user.ClinicGroupID
 		layoutWithLeadingZero := "2006/01/02 & 03:04 PM"
 		layoutWithoutLeadingZero := "2006/01/02 & 3:04 PM"
 
@@ -109,6 +109,7 @@ func RequestAppointment(c *gin.Context) {
 				patient.Phone = input.PhoneNumber
 				patient.GenerateOTPToken(6)
 				patient.IsVerified = true
+				patient.ClinicGroupID = input.ClinicGroupID
 				if err := tx.Create(&patient).Error; err != nil {
 					tx.Rollback()
 					c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't Create Patient"})
@@ -184,18 +185,34 @@ func RequestAppointment(c *gin.Context) {
 }
 
 func FetchRequestedAppointments(c *gin.Context) {
+	c.Set("modelName", "appointment_requests")
+	db := getScopedDB(c)
+	fmt.Println("Fetching requested appointments...")
+
 	var output []Models.AppointmentRequest
-	if err := Models.DB.Model(&Models.AppointmentRequest{}).Joins("JOIN patients ON patients.id = appointment_requests.patient_id").
-		Where("patients.is_verified = ?", true).Find(&output).Error; err != nil {
+
+	// Print the SQL query being executed
+	query := db.Model(&Models.AppointmentRequest{}).
+		Select("appointment_requests.*"). // Makes it clear which table's columns we want
+		Joins("JOIN patients ON patients.id = appointment_requests.patient_id").
+		Where("patients.is_verified = ?", true)
+
+	fmt.Println("SQL Query:", query.Statement.SQL.String())
+
+	if err := query.Find(&output).Error; err != nil {
+		fmt.Println("Error fetching appointments:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	fmt.Println("Found", len(output), "appointments")
 	c.JSON(http.StatusOK, output)
 }
 
 func FetchUnassignedAppointments(c *gin.Context) {
+	db := getScopedDB(c)
 	var output []Models.Appointment
-	if err := Models.DB.Model(&Models.Appointment{}).
+	if err := db.Model(&Models.Appointment{}).
 		Where("treatment_plan_id IS null").Find(&output).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

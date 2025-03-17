@@ -24,4 +24,5 @@ type SuperTreatmentPlan struct {
 	SessionsCount  uint            `json:"sessions_count"` // List of sessions in the treatment plan
 	Price          float64         `json:"price"`          // Price of the session
 	TreatmentPlans []TreatmentPlan `json:"treatment_plans"`
+	ClinicGroupID  uint            `json:"clinic_group_id"`
 }

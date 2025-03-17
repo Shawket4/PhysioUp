@@ -19,4 +19,5 @@ type Patient struct {
 	OTP           string               `json:"otp"`
 	IsVerified    bool                 `json:"is_verified"`
 	TreatmentPlan []TreatmentPlan      `json:"treatment_plan"`
+	ClinicGroupID uint                 `json:"clinic_group_id"`
 }

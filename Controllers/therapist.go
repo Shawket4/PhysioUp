@@ -229,9 +229,23 @@ func AddTherapistTimeBlocks(c *gin.Context) {
 	})
 }
 
+// TODO: Group public api
 func GetTherapists(c *gin.Context) {
+	user_id, _ := Token.ExtractTokenID(c)
+
+	client_group_id, err := Models.GetUserClinicGroupID(user_id)
+	if err != nil {
+		log.Println(err)
+	}
+
+	query := Models.DB.Model(&Models.Therapist{}).Joins("JOIN users ON therapists.user_id = users.id").Preload("Schedule.TimeBlocks.Appointment")
+
+	if client_group_id != 0 {
+		query = query.Where("users.clinic_group_id = ?", client_group_id)
+	}
+
 	var therapists []Models.Therapist
-	if err := Models.DB.Model(&Models.Therapist{}).Preload("Schedule.TimeBlocks.Appointment").Find(&therapists).Error; err != nil {
+	if err := query.Find(&therapists).Error; err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve therapists: " + err.Error()})
 		return
@@ -240,7 +254,16 @@ func GetTherapists(c *gin.Context) {
 	c.JSON(http.StatusOK, therapists)
 }
 
+// TODO: Group public api
 func GetTherapistsTrimmed(c *gin.Context) {
+
+	user_id, _ := Token.ExtractTokenID(c)
+
+	client_group_id, err := Models.GetUserClinicGroupID(user_id)
+	if err != nil {
+		log.Println(err)
+	}
+
 	// Define response structures without the gorm.Model fields
 	type TimeBlockDTO struct {
 		ID          uint   `json:"ID"`
@@ -268,9 +291,14 @@ func GetTherapistsTrimmed(c *gin.Context) {
 	var therapists []Models.Therapist
 	currentDate := time.Now().Format("2006/01/02")
 
-	if err := Models.DB.Model(&Models.Therapist{}).
-		Preload("Schedule.TimeBlocks", "date_time >= ?", currentDate).
-		Preload("Schedule.TimeBlocks.Appointment").
+	query := Models.DB.Model(&Models.Therapist{}).Joins("JOIN users ON therapists.user_id = users.id").Preload("Schedule.TimeBlocks", "date_time >= ?", currentDate).
+		Preload("Schedule.TimeBlocks.Appointment")
+
+	if client_group_id != 0 {
+		query = query.Where("users.clinic_group_id = ?", client_group_id)
+	}
+
+	if err := query.
 		Find(&therapists).Error; err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch therapists"})
