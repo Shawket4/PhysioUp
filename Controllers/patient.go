@@ -31,6 +31,7 @@ func FetchFutureAppointments(c *gin.Context) {
 
 func FetchPatients(c *gin.Context) {
 	db := getScopedDB(c)
+	db = db.Debug()
 	var patients []Models.Patient
 	if err := db.Model(&Models.Patient{}).Preload("History").Find(&patients).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

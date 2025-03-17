@@ -140,15 +140,36 @@ func Register(c *gin.Context) {
 }
 
 func RegisterClinicGroup(c *gin.Context) {
-	var input Models.ClinicGroup
+	var input struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+	}
+
+	var group Models.ClinicGroup
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := Models.DB.Create(&input).Error; err != nil {
+	group.Name = input.Name
+
+	if err := Models.DB.Create(&group).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user := Models.User{}
+
+	user.Username = input.Name
+	user.Password = input.Password
+	user.Permission = 3
+	user.ClinicGroupID = group.ID
+	_, err := user.SaveUser()
+	if err != nil {
+		log.Println(err)
+		c.String(http.StatusBadRequest, "Failed To Register User")
+		c.Abort()
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": "validated"})
