@@ -73,6 +73,7 @@ func SaveFCM(c *gin.Context) {
 	var input struct {
 		Token string `json:"token"`
 	}
+	c.ShouldBindJSON(&input)
 	user_id, err := Token.ExtractTokenID(c)
 	if err != nil {
 		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

@@ -24,7 +24,7 @@ type User struct {
 type DeviceToken struct {
 	gorm.Model
 	UserID uint
-	Value  string `json:"value" gorm"unique"`
+	Value  string `json:"value" gorm:"unique"`
 }
 
 func GetUserByID(uid uint) (User, error) {
