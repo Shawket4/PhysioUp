@@ -39,7 +39,7 @@ func RequestAppointment(c *gin.Context) {
 	if user_id != 0 {
 		user, _ = Models.GetUserByID(user_id)
 	}
-	fcms, _ := Models.GetFCMsByID(user_id)
+	fcms, _ := Models.GetFCMsByID(therapist.UserID)
 	if len(fcms) > 0 {
 		FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "New Appointment Request", Body: fmt.Sprintf("You have a new appointment request from %s at %s", input.PatientName, input.DateTime)})
 	}
