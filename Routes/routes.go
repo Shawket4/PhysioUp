@@ -20,7 +20,6 @@ func ConfigRoutes(router *gin.Engine) {
 		public.POST("/login", Controllers.Login)
 		public.POST("/register", Controllers.Register)
 		public.POST("/register/ClinicGroup", Controllers.RegisterClinicGroup)
-		public.POST("/SaveFcmToken", Controllers.SaveFcmToken)
 		public.POST("/RequestAppointment", Controllers.RequestAppointment)
 		public.POST("/GetPatientIdByPhone", Controllers.GetPatientIdByPhone)
 		public.POST("/FetchAppointmentsByPatientID", Controllers.FetchAppointmentsByPatientID)
@@ -35,8 +34,10 @@ func ConfigRoutes(router *gin.Engine) {
 	authorized.Use(Middleware.SetClinicGroup())
 	{
 
+		
 		// User-related routes
 		authorized.GET("/user", Controllers.CurrentUser)
+		authorized.POST("/SaveFCM", Controllers.SaveFCM)
 
 		// Appointment-related routes
 		authorized.GET("/FetchRequestedAppointments", Controllers.FetchRequestedAppointments)

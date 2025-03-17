@@ -69,15 +69,19 @@ func Logout(c *gin.Context) {
 	token.Claims = token2.Claims
 }
 
-func SaveFcmToken(c *gin.Context) {
+func SaveFCM(c *gin.Context) {
 	var input struct {
-		Token  string `json:"token"`
-		UserID uint   `json:"user_id"`
+		Token string `json:"token"`
 	}
-	deviceToken := Models.DeviceToken{UserID: input.UserID, Value: input.Token}
+	user_id, err := Token.ExtractTokenID(c)
+	if err != nil {
+		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// return
+	}
+	deviceToken := Models.DeviceToken{UserID: user_id, Value: input.Token}
 	if err := Models.DB.Save(&deviceToken).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// return
 	}
 	c.JSON(http.StatusOK, nil)
 }
