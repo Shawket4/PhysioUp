@@ -105,7 +105,7 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "User Frozen"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Login Successful", "jwt": token})
+	c.JSON(http.StatusOK, gin.H{"message": "Login Successful", "jwt": token, "permission": user.Permission})
 
 }
 
