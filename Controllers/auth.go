@@ -114,7 +114,7 @@ func Login(c *gin.Context) {
 type RegisterInput struct {
 	Username      string `json:"username" binding:"required"`
 	Password      string `json:"password" binding:"required"`
-	Permission    int    `json:"permission" binding:"required"`
+	Permission    int    `json:"permission"`
 	ClinicGroupID uint   `json:"clinic_group_id"`
 }
 
