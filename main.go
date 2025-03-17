@@ -2,6 +2,7 @@ package main
 
 import (
 	"PhysioUp/CronJobs"
+	"PhysioUp/FirebaseMessaging"
 	"PhysioUp/Models"
 	"PhysioUp/Routes"
 
@@ -11,6 +12,7 @@ import (
 
 func main() {
 	Models.ConnectDataBase()
+	FirebaseMessaging.Setup()
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"https://physioup.ddns.net", "http://localhost:3000"}, // Replace with your frontend URL

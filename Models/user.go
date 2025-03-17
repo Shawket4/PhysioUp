@@ -49,6 +49,15 @@ func GetUserClinicGroupID(uid uint) (uint, error) {
 	return clinic_id, nil
 }
 
+func GetFCMsByID(uid uint) ([]string, error) {
+	var fcms []string
+	if err := DB.Model(&DeviceToken{}).Where("user_id = ?", uid).Select("value").Find(&fcms).Error; err != nil {
+		return []string{}, errors.New("No FCMS found")
+	}
+
+	return fcms, nil
+}
+
 func (user *User) ChangeState() {
 	user.IsFrozen = !user.IsFrozen
 }

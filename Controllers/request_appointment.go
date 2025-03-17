@@ -1,6 +1,7 @@
 package Controllers
 
 import (
+	"PhysioUp/FirebaseMessaging"
 	"PhysioUp/Models"
 	"PhysioUp/SSE"
 	"PhysioUp/Utils/Token"
@@ -37,6 +38,10 @@ func RequestAppointment(c *gin.Context) {
 	var user Models.User
 	if user_id != 0 {
 		user, _ = Models.GetUserByID(user_id)
+	}
+	fcms, _ := Models.GetFCMsByID(user_id)
+	if len(fcms) > 0 {
+		FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "New Appointment Request", Body: fmt.Sprintf("You have a new appointment request from %s at %s", input.PatientName, input.DateTime)})
 	}
 	input.ClinicGroupID = user.ClinicGroupID
 	if user.Permission < 2 {
