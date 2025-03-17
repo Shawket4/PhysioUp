@@ -294,9 +294,10 @@ func GetTherapistsTrimmed(c *gin.Context) {
 	query := Models.DB.Model(&Models.Therapist{}).Joins("JOIN users ON therapists.user_id = users.id").Preload("Schedule.TimeBlocks", "date_time >= ?", currentDate).
 		Preload("Schedule.TimeBlocks.Appointment")
 
-	if client_group_id != 0 {
-		query = query.Where("users.clinic_group_id = ?", client_group_id)
+	if client_group_id == 0 {
+		client_group_id = 1
 	}
+	query = query.Where("users.clinic_group_id = ?", client_group_id)
 
 	if err := query.
 		Find(&therapists).Error; err != nil {
