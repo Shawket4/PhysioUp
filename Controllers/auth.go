@@ -1,6 +1,7 @@
 package Controllers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	jwt "github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 )
 
 func CurrentUser(c *gin.Context) {
@@ -184,6 +186,13 @@ func RegisterTherapist(c *gin.Context) {
 		return
 	}
 
+	user_id, _ := Token.ExtractTokenID(c)
+
+	clinic_group_id, err := Models.GetUserClinicGroupID(user_id)
+	if err != nil {
+		log.Println(err)
+	}
+	input.ClinicGroupID = clinic_group_id
 	if input.ClinicGroupID != 0 {
 		exists, err := Models.ClinicGroupExists(input.ClinicGroupID)
 		if err != nil {
@@ -202,7 +211,7 @@ func RegisterTherapist(c *gin.Context) {
 	user.Password = input.Password
 	user.Permission = 2
 	user.ClinicGroupID = input.ClinicGroupID
-	_, err := user.SaveUser()
+	_, err = user.SaveUser()
 
 	if err != nil {
 		log.Println(err)
@@ -229,6 +238,65 @@ func RegisterTherapist(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Registered Successfully"})
+}
+
+func DeleteTherapist(c *gin.Context) {
+	// Extract therapist ID from the request (e.g., from URL parameters or JSON body)
+	var input struct {
+		ID uint `json:"id"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Therapist not found"})
+		return
+	}
+
+	var therapist Models.Therapist
+	if err := Models.DB.Where("id = ?", input.ID).First(&therapist).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Therapist not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve therapist"})
+		}
+		return
+	}
+
+	var user Models.User
+	if err := Models.DB.Where("id = ?", therapist.UserID).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Associated user not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
+		}
+		return
+	}
+
+	tx := Models.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Delete(&therapist).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete therapist"})
+		return
+	}
+
+	if err := tx.Delete(&user).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+		return
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Therapist and associated user deleted successfully"})
 }
 
 func DeleteUser(c *gin.Context) {

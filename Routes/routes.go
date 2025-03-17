@@ -59,6 +59,7 @@ func ConfigRoutes(router *gin.Engine) {
 
 		// Therapist-related routes
 		authorized.POST("/RegisterTherapist", Controllers.RegisterTherapist)
+		authorized.POST("/DeleteTherapist", Controllers.DeleteTherapist)
 		authorized.POST("/GetTherapistSchedule", Controllers.GetTherapistSchedule)
 		authorized.POST("/AddTherapistTimeBlocks", Controllers.AddTherapistTimeBlocks)
 		authorized.GET("/GetTherapists", Controllers.GetTherapists)
