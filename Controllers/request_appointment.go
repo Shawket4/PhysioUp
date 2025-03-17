@@ -38,9 +38,9 @@ func RequestAppointment(c *gin.Context) {
 	if user_id != 0 {
 		user, _ = Models.GetUserByID(user_id)
 	}
-	input.ClinicGroupID = 1
+	input.ClinicGroupID = user.ClinicGroupID
 	if user.Permission < 2 {
-		input.ClinicGroupID = user.ClinicGroupID
+		input.ClinicGroupID = 1
 		layoutWithLeadingZero := "2006/01/02 & 03:04 PM"
 		layoutWithoutLeadingZero := "2006/01/02 & 3:04 PM"
 
