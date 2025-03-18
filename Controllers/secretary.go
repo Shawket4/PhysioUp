@@ -477,13 +477,6 @@ func RemoveAppointmentSendMessage(c *gin.Context) {
 		return
 	}
 
-	// if err := Models.DB.Model(&Models.Appointment{}).Delete("id = ?", appointment.ID).Error; err != nil {
-	// 	log.Println(err)
-	// 	c.JSON(http.StatusBadRequest, err)
-	// 	c.Abort()
-	// 	return
-	// }
-
 	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
 		log.Println(err)
@@ -492,17 +485,19 @@ func RemoveAppointmentSendMessage(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted Successfully"})
+
 	if Patient.Phone != "" {
-		Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
 		user_id, err := Token.ExtractTokenID(c)
 		if err != nil {
 			log.Println(err)
 		}
 		fcms, _ := Models.GetGroupFCMsByID(user_id)
 		if len(fcms) > 0 {
-			FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "Appointment Cancelled", Body: fmt.Sprintf("Your Appointment With %s, At %s Has Been Cancelled", Patient.Name, TimeBlock.DateTime)})
+			go FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "Appointment Cancelled", Body: fmt.Sprintf("Your Appointment With %s, At %s Has Been Cancelled", Patient.Name, TimeBlock.DateTime)})
 		}
+		go Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
 	}
+
 }
 
 func RemovePackage(c *gin.Context) {
