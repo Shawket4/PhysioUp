@@ -39,10 +39,7 @@ func RequestAppointment(c *gin.Context) {
 	if user_id != 0 {
 		user, _ = Models.GetUserByID(user_id)
 	}
-	fcms, _ := Models.GetFCMsByID(therapist.UserID)
-	if len(fcms) > 0 {
-		FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "New Appointment Request", Body: fmt.Sprintf("You have a new appointment request from %s at %s", input.PatientName, input.DateTime)})
-	}
+
 	input.ClinicGroupID = user.ClinicGroupID
 	if user.Permission < 2 {
 		input.ClinicGroupID = 1
@@ -132,6 +129,7 @@ func RequestAppointment(c *gin.Context) {
 		}
 
 		input.PatientID = patient.ID
+		input.PatientName = patient.Name
 		var existingAppointmentRequests []Models.AppointmentRequest
 		var existingAppointments []Models.Appointment
 
@@ -168,6 +166,13 @@ func RequestAppointment(c *gin.Context) {
 		input.PatientName = patient.Name
 		input.PhoneNumber = patient.Phone
 	}
+
+	defer func() {
+		fcms, _ := Models.GetGroupFCMsByID(therapist.UserID)
+		if len(fcms) > 0 {
+			FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "New Appointment Request", Body: fmt.Sprintf("You have a new appointment request from %s at %s", input.PatientName, input.DateTime)})
+		}
+	}()
 
 	// Save the appointment request
 	if err := tx.Save(&input).Error; err != nil {

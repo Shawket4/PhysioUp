@@ -1,8 +1,10 @@
 package Controllers
 
 import (
+	"PhysioUp/FirebaseMessaging"
 	"PhysioUp/Models"
 	"PhysioUp/SSE"
+	"PhysioUp/Utils/Token"
 	"PhysioUp/Whatsapp"
 	"fmt"
 	"log"
@@ -146,6 +148,14 @@ func AcceptAppointment(c *gin.Context) {
 	// 	}
 	// }
 	c.JSON(http.StatusOK, gin.H{"message": "Appointment registered successfully"})
+	user_id, err := Token.ExtractTokenID(c)
+	if err != nil {
+		log.Println(err)
+	}
+	fcms, _ := Models.GetGroupFCMsByID(user_id)
+	if len(fcms) > 0 {
+		FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "An Appointment Has Been Accepted", Body: fmt.Sprintf("Your appointment at %s with %s has been accepted", appointmentRequest.DateTime, appointmentRequest.PatientName)})
+	}
 	SSE.Broadcaster.Broadcast("refresh")
 	Whatsapp.SendMessage(appointmentRequest.PhoneNumber, fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed", appointmentRequest.DateTime, appointmentRequest.TherapistName))
 }
@@ -198,7 +208,17 @@ func RegisterAppointment(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create treatment plan"})
 			return
 		}
-		// fmt.Println(input.TreatmentPlan)
+		defer func() {
+			user_id, err := Token.ExtractTokenID(c)
+			if err != nil {
+				log.Println(err)
+			}
+			fcms, _ := Models.GetGroupFCMsByID(user_id)
+			if len(fcms) > 0 {
+				FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "A Package Has Been Registered", Body: fmt.Sprintf("%s has registered \"%s\" with a price of: %v", appointment.PatientName, input.TreatmentPlan.SuperTreatmentPlan.Description, input.TreatmentPlan.TotalPrice)})
+			}
+		}()
+
 	}
 	fmt.Println(input.TreatmentPlan.ID)
 	fmt.Println(input.AppointmentID)
@@ -216,7 +236,6 @@ func RegisterAppointment(c *gin.Context) {
 		return
 	}
 	SSE.Broadcaster.Broadcast("refresh")
-
 	c.JSON(http.StatusOK, gin.H{"message": "Appointment Registered Successfully"})
 
 }
@@ -262,6 +281,14 @@ func RejectAppointment(c *gin.Context) {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
 		return
+	}
+	user_id, err := Token.ExtractTokenID(c)
+	if err != nil {
+		log.Println(err)
+	}
+	fcms, _ := Models.GetGroupFCMsByID(user_id)
+	if len(fcms) > 0 {
+		FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "An Appointment Has Been Rejected", Body: fmt.Sprintf("Your appointment at %s with %s has been rejected", appointmentReq.DateTime, appointmentReq.PatientName)})
 	}
 	SSE.Broadcaster.Broadcast("refresh")
 	Whatsapp.SendMessage(appointmentReq.PhoneNumber, "We're sorry. Your appointment has been rejected, please contact the clinic to reschedule")
@@ -467,6 +494,14 @@ func RemoveAppointmentSendMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted Successfully"})
 	if Patient.Phone != "" {
 		Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
+		user_id, err := Token.ExtractTokenID(c)
+		if err != nil {
+			log.Println(err)
+		}
+		fcms, _ := Models.GetGroupFCMsByID(user_id)
+		if len(fcms) > 0 {
+			FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "Appointment Cancelled", Body: fmt.Sprintf("Your Appointment With %s, At %s Has Been Cancelled", Patient.Name, TimeBlock.DateTime)})
+		}
 	}
 }
 

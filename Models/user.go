@@ -1,11 +1,11 @@
 package Models
 
 import (
+	"PhysioUp/Utils/Token"
 	"errors"
+	"fmt"
 	"html"
 	"strings"
-
-	"PhysioUp/Utils/Token"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -53,6 +53,45 @@ func GetFCMsByID(uid uint) ([]string, error) {
 	var fcms []string
 	if err := DB.Model(&DeviceToken{}).Where("user_id = ?", uid).Select("value").Find(&fcms).Error; err != nil {
 		return []string{}, errors.New("No FCMS found")
+	}
+
+	return fcms, nil
+}
+
+func GetGroupFCMsByID(uid uint) ([]string, error) {
+	var fcms []string
+
+	// First, get the clinic group ID from the user
+	var user User
+	if err := DB.First(&user, uid).Error; err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	// Find all users in the same clinic group
+	var users []User
+	if err := DB.Where("clinic_group_id = ?", user.ClinicGroupID).Find(&users).Error; err != nil {
+		return nil, fmt.Errorf("failed to find users in clinic group: %w", err)
+	}
+
+	// Create a map to ensure uniqueness of FCM tokens
+	uniqueFCMs := make(map[string]struct{})
+
+	// Collect all device tokens for the users
+	for _, groupUser := range users {
+		var tokens []DeviceToken
+		if err := DB.Where("user_id = ?", groupUser.ID).Find(&tokens).Error; err != nil {
+			return nil, fmt.Errorf("failed to find tokens for user %d: %w", groupUser.ID, err)
+		}
+
+		// Add tokens to the unique map
+		for _, token := range tokens {
+			uniqueFCMs[token.Value] = struct{}{}
+		}
+	}
+
+	// Convert the map keys to a slice
+	for token := range uniqueFCMs {
+		fcms = append(fcms, token)
 	}
 
 	return fcms, nil
