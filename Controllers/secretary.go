@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -53,29 +54,10 @@ func AcceptAppointment(c *gin.Context) {
 	appointment.PatientID = appointmentRequest.PatientID
 	appointment.TreatmentPlanID = nil
 	appointment.ClinicGroupID = appointmentRequest.ClinicGroupID
-	// Handle treatment plan
-	// if input.TreatmentPlan.ID == 0 {
-	// 	// Create a new treatment plan
-	// 	var superTreatmentPlan Models.SuperTreatmentPlan
-	// 	if err := tx.Model(&Models.SuperTreatmentPlan{}).Where("id = ?", input.TreatmentPlan.SuperTreatmentPlanID).First(&superTreatmentPlan).Error; err != nil {
-	// 		log.Println(err.Error())
-	// 		tx.Rollback()
-	// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Super treatment plan not found"})
-	// 		return
-	// 	}
-
-	// 	input.TreatmentPlan.PatientID = appointmentRequest.PatientID
-	// 	input.TreatmentPlan.TotalPrice = superTreatmentPlan.Price * ((100 - input.TreatmentPlan.Discount) / 100)
-	// 	input.TreatmentPlan.Remaining = superTreatmentPlan.SessionsCount
-	// 	if err := tx.Create(&input.TreatmentPlan).Error; err != nil {
-	// 		log.Println(err.Error())
-	// 		tx.Rollback()
-	// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create treatment plan"})
-	// 		return
-	// 	}
-	// }
-	// appointment.TreatmentPlanID = input.TreatmentPlan.ID
-
+	appointmentTime, err := time.Parse("2006/01/02 & 3:04 PM", appointmentRequest.DateTime)
+	if appointmentTime.After(time.Now()) {
+		appointment.ReminderSent = true
+	}
 	// Check therapist's schedule for conflicts
 	var therapist Models.Therapist
 	if err := tx.Model(&Models.Therapist{}).Where("id = ?", appointment.TherapistID).Preload("Schedule.TimeBlocks").Find(&therapist).Error; err != nil {
@@ -129,24 +111,6 @@ func AcceptAppointment(c *gin.Context) {
 		return
 	}
 
-	// Send confirmation message (optional)
-	// client := twilio.NewRestClient()
-	// params := &api.CreateMessageParams{}
-	// parts := strings.Split(input.Extra.DateTime, " & ")
-	// params.SetBody(fmt.Sprintf("Your Appointment at: %s is confirmed with Dr. %s\nتم تأكيد الحجز علي الميعاد الساعة %s يوم %s مع دكتور %s", appointmentRequest.DateTime, appointmentRequest.TherapistName, parts[1], parts[0], appointment.TherapistName))
-	// params.SetFrom("+15076936009")
-	// params.SetTo(appointmentRequest.PhoneNumber)
-	// resp, err := client.Api.CreateMessage(params)
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	os.Exit(1)
-	// } else {
-	// 	if resp.Body != nil {
-	// 		fmt.Println(*resp.Body)
-	// 	} else {
-	// 		fmt.Println(resp.Body)
-	// 	}
-	// }
 	c.JSON(http.StatusOK, gin.H{"message": "Appointment registered successfully"})
 	user_id, err := Token.ExtractTokenID(c)
 	if err != nil {
@@ -157,7 +121,10 @@ func AcceptAppointment(c *gin.Context) {
 		FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "An Appointment Has Been Accepted", Body: fmt.Sprintf("Your appointment at %s with %s has been accepted", appointmentRequest.DateTime, appointmentRequest.PatientName)})
 	}
 	SSE.Broadcaster.Broadcast("refresh")
-	Whatsapp.SendMessage(appointmentRequest.PhoneNumber, fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed", appointmentRequest.DateTime, appointmentRequest.TherapistName))
+
+	if appointmentTime.After(time.Now()) {
+		Whatsapp.SendMessage(appointmentRequest.PhoneNumber, fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed", appointmentRequest.DateTime, appointmentRequest.TherapistName))
+	}
 }
 
 func RegisterAppointment(c *gin.Context) {
@@ -291,7 +258,12 @@ func RejectAppointment(c *gin.Context) {
 		FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "An Appointment Has Been Rejected", Body: fmt.Sprintf("Your appointment at %s with %s has been rejected", appointmentReq.DateTime, appointmentReq.PatientName)})
 	}
 	SSE.Broadcaster.Broadcast("refresh")
-	Whatsapp.SendMessage(appointmentReq.PhoneNumber, "We're sorry. Your appointment has been rejected, please contact the clinic to reschedule")
+	appointmentTime, err := time.Parse("2006/01/02 & 3:04 PM", appointmentReq.DateTime)
+
+	if appointmentTime.After(time.Now()) {
+		Whatsapp.SendMessage(appointmentReq.PhoneNumber, "We're sorry. Your appointment has been rejected, please contact the clinic to reschedule")
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Rejected Successfully"})
 }
 
@@ -495,7 +467,11 @@ func RemoveAppointmentSendMessage(c *gin.Context) {
 		if len(fcms) > 0 {
 			go FirebaseMessaging.SendMessage(Models.NotificationRequest{Tokens: fcms, Title: "Appointment Cancelled", Body: fmt.Sprintf("Your Appointment With %s, At %s Has Been Cancelled", Patient.Name, TimeBlock.DateTime)})
 		}
-		go Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
+
+		appointmentTime, err := time.Parse("2006/01/02 & 3:04 PM", TimeBlock.DateTime)
+		if appointmentTime.After(time.Now()) {
+			go Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
+		}
 	}
 
 }
