@@ -188,7 +188,7 @@ func AcceptAppointment(c *gin.Context) {
 			"• *الوقت:* %s\\n"+
 			"• *دكتور:* %s\\n\\n"+
 			"Please arrive 10 minutes early. If you need to reschedule, kindly contact us 24 hours in advance.\\n"+
-			"يرجى الحضور قبل الموعد بـ 10 دقائق. إذا كنت بحاجة إلى إعادة جدولة، يرجى الاتصال بنا قبل 24 ساعة.",
+			"يرجى الحضور قبل الموعد بـ 10 دقائق. إذا كنت بحاجة إلى إعادة الجدولة، يرجى الاتصال بنا قبل 24 ساعة.",
 			date,
 			time,
 			therapistName,
@@ -334,7 +334,14 @@ func RejectAppointment(c *gin.Context) {
 	appointmentTime, err := time.Parse("2006/01/02 & 3:04 PM", appointmentReq.DateTime)
 
 	if appointmentTime.After(time.Now()) {
-		Whatsapp.SendMessage(appointmentReq.PhoneNumber, "We're sorry. Your appointment has been rejected, please contact the clinic to reschedule")
+		message := fmt.Sprintf("❌ *APPOINTMENT REJECTED* ❌\\n\\n" +
+			"Dear Patient,\\n\\n" +
+			"We're sorry, but your appointment request has been rejected. Please contact the clinic to reschedule or for further information.\\n\\n" +
+			"❌ *تم رفض الموعد* ❌\\n\\n" +
+			"عزيزي المريض،\\n\\n" +
+			"نعتذر، ولكن تم رفض طلب موعدك. يرجى الاتصال بالعيادة لإعادة الجدولة أو للحصول على مزيد من المعلومات.")
+
+		Whatsapp.SendMessage(appointmentReq.PhoneNumber, message)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Rejected Successfully"})
@@ -543,7 +550,14 @@ func RemoveAppointmentSendMessage(c *gin.Context) {
 
 		appointmentTime, err := time.Parse("2006/01/02 & 3:04 PM", TimeBlock.DateTime)
 		if appointmentTime.After(time.Now()) {
-			go Whatsapp.SendMessage(Patient.Phone, "We're sorry. Your appointment has been deleted, please contact the clinic to reschedule")
+			message := fmt.Sprintf("🚫 *APPOINTMENT DELETED* 🚫\\n\\n" +
+				"Dear Patient,\\n\\n" +
+				"We're sorry, but your appointment has been deleted. Please contact the clinic to reschedule at your earliest convenience.\\n\\n" +
+				"🚫 *تم إلغاء الموعد* 🚫\\n\\n" +
+				"عزيزي المريض،\\n\\n" +
+				"نعتذر، ولكن تم إلغاء موعدك. يرجى الاتصال بالعيادة لإعادة الجدولة في أقرب وقت مناسب لك.")
+
+			go Whatsapp.SendMessage(Patient.Phone, message)
 		}
 	}
 
