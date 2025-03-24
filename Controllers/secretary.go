@@ -125,9 +125,55 @@ func AcceptAppointment(c *gin.Context) {
 
 	if appointmentTime.After(time.Now()) {
 		// Split the datetime string
+		// Split the datetime string
 		datetimeParts := strings.Split(appointmentRequest.DateTime, " & ")
 		date := datetimeParts[0]
 		time := datetimeParts[1]
+
+		// Reformat date from yyyy/MM/dd to dd/MM/yyyy
+		dateParts := strings.Split(date, "/")
+		if len(dateParts) == 3 {
+			// Rearrange from yyyy/MM/dd to dd/MM/yyyy
+			date = fmt.Sprintf("%s/%s/%s", dateParts[2], dateParts[1], dateParts[0])
+		}
+
+		// Remove "Dr." prefix if it exists
+		therapistName := appointmentRequest.TherapistName
+		therapistName = strings.TrimPrefix(therapistName, "Dr. ")
+		therapistName = strings.TrimPrefix(therapistName, "د. ")
+		therapistName = strings.TrimPrefix(therapistName, "Dr.")
+		therapistName = strings.TrimPrefix(therapistName, "د.")
+
+		// Convert date to Arabic format (replace Western numbers with Arabic numbers)
+		arabicDate := strings.NewReplacer(
+			"0", "٠",
+			"1", "١",
+			"2", "٢",
+			"3", "٣",
+			"4", "٤",
+			"5", "٥",
+			"6", "٦",
+			"7", "٧",
+			"8", "٨",
+			"9", "٩",
+			"/", "/",
+		).Replace(date)
+
+		// Convert time to Arabic format
+		arabicTime := strings.NewReplacer(
+			"0", "٠",
+			"1", "١",
+			"2", "٢",
+			"3", "٣",
+			"4", "٤",
+			"5", "٥",
+			"6", "٦",
+			"7", "٧",
+			"8", "٨",
+			"9", "٩",
+			"AM", "صباحًا",
+			"PM", "مساءً",
+		).Replace(time)
 
 		message := fmt.Sprintf("🗓️ *APPOINTMENT CONFIRMATION* 🗓️\\n\\n"+
 			"Dear Patient,\\n\\n"+
@@ -145,10 +191,10 @@ func AcceptAppointment(c *gin.Context) {
 			"يرجى الحضور قبل الموعد بـ 10 دقائق. إذا كنت بحاجة إلى إعادة جدولة، يرجى الاتصال بنا قبل 24 ساعة.",
 			date,
 			time,
-			appointmentRequest.TherapistName,
-			date,
-			time,
-			appointmentRequest.TherapistName)
+			therapistName,
+			arabicDate,
+			arabicTime,
+			therapistName)
 
 		Whatsapp.SendMessage(appointmentRequest.PhoneNumber, message)
 	}
