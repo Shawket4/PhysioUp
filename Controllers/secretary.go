@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -123,11 +124,32 @@ func AcceptAppointment(c *gin.Context) {
 	SSE.Broadcaster.Broadcast("refresh")
 
 	if appointmentTime.After(time.Now()) {
-		message := fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed\\n\\nتم تأكيد حجز حضرتك بمعاد: %s مع دكتور / %s",
-			appointmentRequest.DateTime,
+		// Split the datetime string
+		datetimeParts := strings.Split(appointmentRequest.DateTime, " & ")
+		date := datetimeParts[0]
+		time := datetimeParts[1]
+
+		message := fmt.Sprintf("🗓️ *APPOINTMENT CONFIRMATION* 🗓️\\n\\n"+
+			"Dear Patient,\\n\\n"+
+			"Your appointment has been confirmed:\\n"+
+			"• *Date:* %s\\n"+
+			"• *Time:* %s\\n"+
+			"• *Therapist:* Dr. %s\\n\\n"+
+			"✅ *تأكيد الموعد* ✅\\n\\n"+
+			"عزيزي المريض،\\n\\n"+
+			"تم تأكيد موعدك:\\n"+
+			"• *التاريخ:* %s\\n"+
+			"• *الوقت:* %s\\n"+
+			"• *دكتور:* %s\\n\\n"+
+			"Please arrive 10 minutes early. If you need to reschedule, kindly contact us 24 hours in advance.\\n"+
+			"يرجى الحضور قبل الموعد بـ 10 دقائق. إذا كنت بحاجة إلى إعادة جدولة، يرجى الاتصال بنا قبل 24 ساعة.",
+			date,
+			time,
 			appointmentRequest.TherapistName,
-			appointmentRequest.DateTime,
+			date,
+			time,
 			appointmentRequest.TherapistName)
+
 		Whatsapp.SendMessage(appointmentRequest.PhoneNumber, message)
 	}
 }
