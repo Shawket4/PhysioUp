@@ -123,7 +123,7 @@ func AcceptAppointment(c *gin.Context) {
 	SSE.Broadcaster.Broadcast("refresh")
 
 	if appointmentTime.After(time.Now()) {
-		message := fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed\n\nتم تأكيد حجز حضرتك بمعاد: %s مع دكتور / %s",
+		message := fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed\\n\\nتم تأكيد حجز حضرتك بمعاد: %s مع دكتور / %s",
 			appointmentRequest.DateTime,
 			appointmentRequest.TherapistName,
 			appointmentRequest.DateTime,
