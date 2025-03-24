@@ -123,7 +123,7 @@ func AcceptAppointment(c *gin.Context) {
 	SSE.Broadcaster.Broadcast("refresh")
 
 	if appointmentTime.After(time.Now()) {
-		Whatsapp.SendMessage(appointmentRequest.PhoneNumber, fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed", appointmentRequest.DateTime, appointmentRequest.TherapistName))
+		Whatsapp.SendMessage(appointmentRequest.PhoneNumber, fmt.Sprintf("Your Appointment At %s With %s Has Been Confirmed\n تم تأكيد حجز حضرتك بمعاد: %s مع دكتور / %s", appointmentRequest.DateTime, appointmentRequest.TherapistName, appointmentRequest.DateTime, appointmentRequest.TherapistName))
 	}
 }
 
