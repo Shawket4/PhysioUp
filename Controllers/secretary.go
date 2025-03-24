@@ -187,8 +187,10 @@ func AcceptAppointment(c *gin.Context) {
 			"• *التاريخ:* %s\\n"+
 			"• *الوقت:* %s\\n"+
 			"• *دكتور:* %s\\n\\n"+
-			"Please arrive 10 minutes early. If you need to reschedule, kindly contact us 24 hours in advance.\\n"+
-			"يرجى الحضور قبل الموعد بـ 10 دقائق. إذا كنت بحاجة إلى تغير ميعاد الحجز، يرجى الاتصال بنا قبل 24 ساعة.",
+			"Please make sure to arrive on time.\\n"+
+			"يرجى التأكد من الوصول في الموعد المحدد.\\n\\n"+
+			"We look forward to seeing you! Thank you for choosing PhysioUP.\\n"+
+			"نتطلع لرؤيتك! شكراً لاختيارك عيادتنا.",
 			date,
 			time,
 			therapistName,
