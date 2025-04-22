@@ -39,7 +39,7 @@ func SendAppointmentReminders() error {
 		Where("is_completed = ? AND reminder_sent = ? AND date_time LIKE ?",
 			false,
 			false,
-			todayDate+"%").
+			todayDate+" &").
 		Find(&appointments)
 
 	if result.Error != nil {
@@ -59,7 +59,8 @@ func SendAppointmentReminders() error {
 		// Calculate time difference
 		timeDiff := appointmentTime.Sub(now)
 
-		if timeDiff < 3*time.Hour {
+		// Update the time comparison logic to only include upcoming appointments
+		if timeDiff > 0 && timeDiff < 3*time.Hour {
 			appointmentsToRemind = append(appointmentsToRemind, appointment)
 		}
 
