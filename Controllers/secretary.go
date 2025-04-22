@@ -190,7 +190,7 @@ func AcceptAppointment(c *gin.Context) {
 			"Please make sure to arrive on time.\\n"+
 			"يرجى التأكد من الوصول في الموعد المحدد.\\n\\n"+
 			"We look forward to seeing you! Thank you for choosing PhysioUP.\\n"+
-			"نتطلع لرؤيتك! شكراً لاختيارك عيادتنا.",
+			"نتطلع لرؤيتك! شكراً لاختيارك PhysioUP.",
 			date,
 			time,
 			therapistName,
