@@ -1,3 +1,3 @@
 package Constants
 
-const WhatsappGoService string = "http://localhost:3000"
+const WhatsappGoService string = "http://localhost:3001"
